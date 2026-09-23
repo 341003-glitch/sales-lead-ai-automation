@@ -1,0 +1,559 @@
+{
+  "name": "AABA 2 Project",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "44f059ed-f407-4202-8c11-b854351dd2ab",
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "10agyDRCVM2gXXWtmxr_1_r4oR0yE-pZgl2as5OoA3t8",
+          "mode": "list",
+          "cachedResultName": "Leads Tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10agyDRCVM2gXXWtmxr_1_r4oR0yE-pZgl2as5OoA3t8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10agyDRCVM2gXXWtmxr_1_r4oR0yE-pZgl2as5OoA3t8/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "850ccf96-4805-41e4-80ad-410e1a202082",
+      "name": "Get Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VDmKqWBN98aKRaOU",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.Website }}\n",
+        "options": {}
+      },
+      "id": "5d5a997c-c5e0-4a53-a3be-a6f415b669be",
+      "name": "Fetch Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "companyText",
+              "cssSelector": "body"
+            },
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "f56e8691-e67f-4c24-a1be-211b9fdbaae5",
+      "name": "Extract Text",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "38866cb6-6f91-4786-889b-ca0ae9e9f60c",
+              "name": "summaryInput",
+              "value": "={{ $json.companyText ? $json.companyText.slice(0, 600) : $('Get Leads').item.json['YC Description'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "a697ded9-ca5c-44af-97e6-85087928098c",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        896,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9d1b3529-3eb8-4d87-a61c-5daaee8ec23f",
+              "name": "summaryInput",
+              "value": "= {{ $('Get Leads').item.json['YC Description'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "012d492e-cdfc-443a-b4ce-40465d523d15",
+      "name": "Edit Fields1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        672,
+        96
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "7ab65d0d-8874-467d-9128-35199b2b83d4",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1216,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Company name: {{ $json['Company Name'] }}\nIndustry: {{ $json['Industry'] }}\nWebsite text: {{ $json.summaryInput }}\n\nBased on the above, respond with exactly two lines:\nSummary: (2 sentences on what this company does)\nPain Point: (1 sentence on their most likely current business challenge)",
+        "batching": {}
+      },
+      "id": "714c7ff4-75ef-45e2-b518-6eed348307cf",
+      "name": "Basic LLM Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1440,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "id": "117dca54-4381-4918-9a50-239371d2c7c2",
+      "name": "Groq Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        224
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "DW3oiOCYIjfbu7Vk",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "id": "c556d7d5-a752-4e9b-9e6a-55037147b4b4",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2224,
+        224
+      ],
+      "webhookId": "e9dff0d7-0323-49ec-aebe-909a3c9ee5f1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "60b42380-73e5-47d0-9bd6-081e30a11eff",
+      "name": "Loop Over Leads",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1344,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ca9c33ed-d877-4ba2-a8e6-406438933266",
+              "name": "Company Name",
+              "value": "={{ $json[\"Company Name\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "8fb654fd-2de2-4d4f-8fe1-65429388f404",
+              "name": "Solution Category",
+              "value": "={{ $json.solutionCategory }}",
+              "type": "string"
+            },
+            {
+              "id": "a83d9b82-4ee9-41e1-bf37-33fdf9f5abd6",
+              "name": "Recommended Solution",
+              "value": "={{ $json.recommendedSolution }}",
+              "type": "string"
+            },
+            {
+              "id": "609efea1-c340-432f-b022-4e0cc92b6313",
+              "name": "Business Value",
+              "value": "={{ $json.businessValue }}",
+              "type": "string"
+            },
+            {
+              "id": "cf15c14f-5a87-4cd7-a947-8f67158ef7a6",
+              "name": "Outreach Angle",
+              "value": "={{ $json.outreachAngle }}",
+              "type": "string"
+            },
+            {
+              "id": "3ca3af19-54bb-451d-9391-762f5cc7ac5f",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1936,
+        16
+      ],
+      "id": "cf6a6eb9-f0df-4d92-9182-d1408932330a",
+      "name": "Outreach Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n\n  const data = item.json;\n  const companyName = $('Get Leads').item.json[\"Company Name\"];\n\n  // Get the AI output\n  const rawText = (\n    data.text ||\n    data.output ||\n    data.response ||\n    data.summary ||\n    data.content ||\n    ''\n  ).toString();\n\n  // Focus primarily on the Pain Point section\n  const painPointMatch = rawText.match(\n    /Pain Point\\s*:\\s*([\\s\\S]*)/i\n  );\n\n  const painPoint = painPointMatch\n    ? painPointMatch[1]\n    : rawText;\n\n  const text = painPoint.toLowerCase();\n\n  // Default solution\n  let solutionCategory = 'AI / General Business Automation';\n  let recommendedSolution = 'AI-powered business process automation';\n  let businessValue = 'Reduce manual effort and improve operational efficiency';\n  let outreachAngle = 'Explore opportunities to identify repetitive processes that could benefit from intelligent automation';\n\n  const categories = [\n\n    {\n      name: 'Revenue & Growth Automation',\n      keywords: [\n        'revenue',\n        'monetization',\n        'monetise',\n        'monetize',\n        'conversion',\n        'customer acquisition',\n        'growth',\n        'retention',\n        'engagement',\n        'supplier acquisition',\n        'attract suppliers',\n        'sales growth',\n        'business growth'\n      ],\n      solution: 'AI-powered revenue, growth and customer engagement automation',\n      value: 'Improve customer conversion, engagement and revenue-generating processes',\n      angle: 'Explore opportunities to use AI and automation to improve conversion, customer engagement and scalable revenue growth'\n    },\n\n    {\n      name: 'Customer Support Automation',\n      keywords: [\n        'customer support',\n        'customer service',\n        'support tickets',\n        'support queries',\n        'customer queries',\n        'complaints',\n        'helpdesk',\n        'ticket volume',\n        'response time'\n      ],\n      solution: 'AI-powered customer support and query automation',\n      value: 'Reduce repetitive support workload and improve response speed',\n      angle: 'Explore opportunities to automate repetitive customer interactions while keeping human teams involved for complex cases'\n    },\n\n    {\n      name: 'Lead & Sales Automation',\n      keywords: [\n        'lead generation',\n        'lead qualification',\n        'prospecting',\n        'sales process',\n        'sales pipeline',\n        'sales team',\n        'crm',\n        'prospects',\n        'sales representatives',\n        'sales representatives spend',\n        'manual prospecting'\n      ],\n      solution: 'AI-powered lead research, qualification and sales workflow automation',\n      value: 'Reduce manual prospecting effort and help sales teams focus on higher-value opportunities',\n      angle: 'Explore opportunities to automate lead research and qualification so the sales team can focus on promising prospects'\n    },\n\n    {\n      name: 'Data & Reporting Automation',\n      keywords: [\n        'data processing',\n        'data entry',\n        'manual reporting',\n        'reporting',\n        'reports',\n        'spreadsheet',\n        'dashboard',\n        'analytics',\n        'data analysis',\n        'manual analysis'\n      ],\n      solution: 'Automated data processing, analytics and reporting workflows',\n      value: 'Reduce manual reporting effort and enable faster data-driven decisions',\n      angle: 'Explore opportunities to automate recurring reporting and turn operational data into faster actionable insights'\n    },\n\n    {\n      name: 'Document & Knowledge Automation',\n      keywords: [\n        'document processing',\n        'document search',\n        'searching documents',\n        'knowledge management',\n        'information retrieval',\n        'manual document',\n        'files',\n        'records'\n      ],\n      solution: 'AI-powered document processing and knowledge retrieval',\n      value: 'Reduce time spent searching and processing information',\n      angle: 'Explore opportunities to make internal information easier to retrieve and process automatically'\n    },\n\n    {\n      name: 'Operations & Workflow Automation',\n      keywords: [\n        'manual process',\n        'manual work',\n        'repetitive process',\n        'repetitive task',\n        'workflow',\n        'operational inefficiency',\n        'operations',\n        'supply chain',\n        'inventory',\n        'logistics',\n        'process automation'\n      ],\n      solution: 'Intelligent workflow and process automation',\n      value: 'Reduce repetitive manual work and improve operational efficiency',\n      angle: 'Explore opportunities to automate repetitive operational processes and free teams to focus on higher-value work'\n    },\n\n    {\n      name: 'Marketing Automation & Analytics',\n      keywords: [\n        'marketing campaign',\n        'marketing analytics',\n        'campaign analysis',\n        'customer insights',\n        'digital marketing',\n        'advertising',\n        'marketing data',\n        'campaign performance'\n      ],\n      solution: 'AI-powered marketing analytics and automation',\n      value: 'Reduce manual analysis and improve the speed of marketing decision-making',\n      angle: 'Explore opportunities to automate marketing analysis and generate more actionable customer insights'\n    }\n  ];\n\n  let bestMatch = null;\n  let highestScore = 0;\n\n  for (const category of categories) {\n\n    let score = 0;\n\n    for (const keyword of category.keywords) {\n      if (text.includes(keyword)) {\n        score++;\n      }\n    }\n\n    if (score > highestScore) {\n      highestScore = score;\n      bestMatch = category;\n    }\n  }\n\n  if (bestMatch) {\n    solutionCategory = bestMatch.name;\n    recommendedSolution = bestMatch.solution;\n    businessValue = bestMatch.value;\n    outreachAngle = bestMatch.angle;\n  }\n\n  return {\n    json: {\n      ...data,\n      \"Company Name\": companyName,\n\n      painPoint,\n      solutionCategory,\n      recommendedSolution,\n      businessValue,\n      outreachAngle,\n      matchedKeywords: highestScore\n    }\n  };\n\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        16
+      ],
+      "id": "c7ca2ae1-bea3-4f46-8a69-90d03044ae38",
+      "name": "Solution Mapping"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1rzZy1lO044JSl-a6RRqpNkCDZCB-smuGgi0Ggykhe6Q",
+          "mode": "list",
+          "cachedResultName": "Flowbase Outreach Tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rzZy1lO044JSl-a6RRqpNkCDZCB-smuGgi0Ggykhe6Q/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Outreach",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rzZy1lO044JSl-a6RRqpNkCDZCB-smuGgi0Ggykhe6Q/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company Name": "={{ $json[\"Company Name\"] }}",
+            "Solution Category": "={{ $json[\"Solution Category\"] }}",
+            "Recommended Solution": "={{ $json[\"Recommended Solution\"] }}",
+            "Business Value": "={{ $json[\"Business Value\"] }}",
+            "Outreach Angle": "={{ $json[\"Outreach Angle\"] }}",
+            "Status": "Analyzed"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Solution Category",
+              "displayName": "Solution Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recommended Solution",
+              "displayName": "Recommended Solution",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Business Value",
+              "displayName": "Business Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Outreach Angle",
+              "displayName": "Outreach Angle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Draft",
+              "displayName": "Email Draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2080,
+        64
+      ],
+      "id": "e2691bbd-3760-44fe-8341-a6c8cd69bbd4",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VDmKqWBN98aKRaOU",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Leads": {
+      "main": [
+        [
+          {
+            "node": "Fetch Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Website": {
+      "main": [
+        [
+          {
+            "node": "Extract Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Solution Mapping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Leads": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Solution Mapping": {
+      "main": [
+        [
+          {
+            "node": "Outreach Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outreach Data": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "46efbebd-37a2-4660-83cc-1513a6a207d9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f0cf2e1976f5c7702d7caeeb11edbd1265f84152aca4f548ca8d53cd3a113e52"
+  },
+  "nodeGroups": [],
+  "id": "bnK3PvyjGVvFyGeb",
+  "tags": []
+}
